@@ -1,0 +1,164 @@
+window.requestAnimFrame = (function (){
+    return window.requestAnimationFrame        ||
+           window.webkitRequestAnimationFrame  ||
+           window.mozRequestAnimationFrame     ||
+           window.oRequestAnimationFrame       ||
+           window.msRequestAnimationFrame      ||
+           function(callback) {
+               window.setTimeout(callback, 1000 / 60);
+           };
+
+})();
+
+window.onload = function () {
+    const WINDOW = {
+        LEFT: -10,
+        BOTTOM: -10,
+        WIDTH: 20,
+        HEIGHT: 20,
+        CENTER: new Point(0, 0, -30), // центр окошка, через которое видим мир
+        CAMERA: new Point(0, 0, -50) // точка, из которой смотрим на мир
+    };
+    const ZOOM_OUT = 1.1;
+    const ZOOM_IN = 0.9;
+
+    const sur = new Surfaces;
+    const canvas = new Canvas({ id: 'canvas', width: 600, height: 600, WINDOW, callbacks: { wheel, mousemove, mouseup, mousedown, mouseleave }});
+    const graph3D = new Graph3D({ WINDOW });
+    const ui = new UI({ callbacks : { move, printPoints, printEdges, printPolygons}})
+    const SCENE = [sur.sphere()]; // сцена
+     const LIGHT = new Light(-10, 2, -10, 200);
+
+     let canRotate = false;
+     let canPrint = {
+         points: false,
+         edges: false,
+         polygons: true
+     }
+
+    // about callbacks
+    function wheel(event) {
+        const delta = (event.wheelDelta > 0) ? ZOOM_IN : ZOOM_OUT;
+        SCENE.forEach(subject => subject.points.forEach(point => graph3D.zoom(delta, point)));
+        render();
+    }
+    function mouseup(){
+        canRotate = false;
+    }
+    function mouseleave(){
+        mouseup();
+    }
+    function mousedown(){
+        canRotate = true;
+    }
+    function mousemove(event) {
+        if(canRotate) {
+            if (event.movementX) { //крутить вокруг OY
+                const alpha = canvas.sx(event.movementX) / WINDOW.CAMERA.z;
+                SCENE.forEach(subject => subject.points.forEach(point => graph3D.rotateOy(alpha, point)));
+            }
+            if (event.movementY) { //крутить вокруг OX
+                const alpha = canvas.sy(event.movementY) / -WINDOW.CAMERA.z;
+                SCENE.forEach(subject => subject.points.forEach(point => graph3D.rotateOx(alpha, point)));
+            }
+            
+        }
+    }
+
+    function printPoints(value){
+        canPrint.points  = value;
+    }
+
+    function printEdges(value){
+     canPrint.edges  = value;
+ }
+    function printPolygons(value){
+    canPrint.polygons = value;
+}
+
+
+      function move(direction){
+          if (direction === 'up' || direction === 'down') {
+              const delta = (direction === 'up') ? 0.1 : -0.1;
+              SCENE.forEach(subject => subject.points.forEach(point => graph3D.moveOy(delta, point)));
+          } 
+          if (direction === 'left' || direction === 'right') {
+            const delta = (direction === 'right') ? 0.1 : -0.1;
+            SCENE.forEach(subject => subject.points.forEach(point => graph3D.moveOx(delta, point)));
+        } 
+      }
+    
+    /*function clear() {
+        canvas.clear();
+    }*/
+
+   
+       // about render
+    function printSubject(subject) {
+        if(canPrint.polygons) { // нарисовать полигоны
+        //отсечь невидимые грани
+            graph3D.calcGorner(subject, WINDOW.CAMERA);
+        // алгоритм художника
+        graph3D.calcDistance(subject,WINDOW.CAMERA, 'distance'); // записать дистанци от полигонов до чего-нибудь
+        subject.polygons.sort((a,b) => b.distance - a.distance);// отсортировать полигоны
+        graph3D.calcDistance(subject, WINDOW.CAMERA, 'lumen');
+        //отрисовка полигонов
+        for (let i = 0; i < subject.polygons.length; i++){
+                //if(subject.polygons[i].visible){}
+                const polygon = subject.polygons[i];
+                const point1 = { x: graph3D.xs(subject.points[polygon.points[0]]), y: graph3D.ys(subject.points[polygon.points[0]]) };
+                const point2 = { x: graph3D.xs(subject.points[polygon.points[1]]), y: graph3D.ys(subject.points[polygon.points[1]]) };
+                const point3 = { x: graph3D.xs(subject.points[polygon.points[2]]), y: graph3D.ys(subject.points[polygon.points[2]]) };
+                const point4 = { x: graph3D.xs(subject.points[polygon.points[3]]), y: graph3D.ys(subject.points[polygon.points[3]]) };
+                let { r, g, b} = polygon.color;
+                const lumen = graph3D.calcIllumination(polygon.lumen / Light.lumen);
+                r = Math.round(r * lumen);
+                g = Math.round(g * lumen);
+                b = Math.round(b * lumen);
+                canvas.polygon([point1,point2,point3,point4], polygon.rgbToHex(r,g,b));               
+                
+        }
+    }
+                 
+        if(canPrint.edges) {  // нарисовать рёбра
+            for (let i = 0; i < subject.edges.length; i++) {
+                const edge = subject.edges[i];
+                const point1 = subject.points[edge.p1];
+                const point2 = subject.points[edge.p2];
+                canvas.line(graph3D.xs(point1), graph3D.ys(point1), graph3D.xs(point2), graph3D.ys(point2));
+            }
+        }
+        
+        if(canPrint.points) { // нарисовать точки
+            for (let i = 0; i < subject.points.length; i++) {
+                const points = subject.points[i];
+                canvas.point(graph3D.xs(points), graph3D.ys(points));
+            } 
+        }
+        
+    }
+
+    function render() {
+        canvas.clear();
+        SCENE.forEach(subject => printSubject(subject));
+        canvas.text(WINDOW.LEFT + 1, WINDOW.HEIGHT + WINDOW.BOTTOM-1, `FPS: ${FPSout}`);   
+    }
+    
+    let FPS = 0;
+    let FPSout = 0;
+    let timestamp = Date.now();
+    (function animloop(){
+        FPS++;
+        const currentTimestamp = Date.now();
+        if (currentTimestamp - timestamp >=1000){
+            timestamp = currentTimestamp;
+            FPSout = FPS;
+            FPS = 0;
+        }
+        render();
+    requestAnimFrame(animloop);
+    })();
+
+    
+
+}; 
