@@ -1,6 +1,7 @@
 Surfaces.prototype.bublik = (count = 10, R = 10) => {
     const points = [];
     const edges = [];
+    const polygons = [];
 
     function setRoundOfPoints(count, R) {
         const da = 2 * Math.PI / count;
@@ -26,5 +27,10 @@ Surfaces.prototype.bublik = (count = 10, R = 10) => {
         edges.push(new Edge(count, 2*count - 1));
     }
 
-    return new Subject(points, edges);
+    for (let i = 0; i < count - 1; i++) {
+        polygons.push(new Polygon([i, i + 1, i + count + 1, i + count], "#FF8C00"));
+    }
+    polygons.push(new Polygon([count - 1, 0, count, points.length - 1], "#FF8C00"));
+
+    return new Subject(points, edges, polygons);
 }
