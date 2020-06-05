@@ -78,7 +78,7 @@ class Graph3D {
         return (illum > 1) ? 1 : illum;
     }
 
-    calcGorner(subject, endPoint) {
+    calcCorner(subject, endPoint) {
         const perpendicular = Math.cos(Math.PI / 2);
         const viewVector = this.math.calcVector(endPoint, new Point(0, 0, 0));
         for (let i = 0; i < subject.polygons.length; i++) {
@@ -92,10 +92,30 @@ class Graph3D {
                 subject.points[points[2]]
             );
             const vector3 = this.math.vectorProd(vector1, vector2);
-            subject.polygons[i].visible = this.math.calcGorner(viewVector, vector3) <= perpendicular;
+            subject.polygons[i].visible = this.math.calcCorner(viewVector, vector3) <= perpendicular;
 
             
         }
+    }
+
+    calcPlaneEquation(){
+        this.math.calcPlaneEquation(this.WINDOW.CAMERA,this.WINDOW.CENTER);
+    }
+    getProection(point){
+        const M = this.math.getProection(point);
+        const P2M = this.math.calcVector(M,this.WINDOW.P2);
+        const cosa = this.math.calcCorner(this.P1P2, M);
+        const cosb = this.math.calcCorner(this.P3P2, M);
+        const module = this.math.calcVectorModule(P2M);
+        return {
+            x: cosa * module,
+            y: cosb * module,
+        }
+    }
+
+    calcWindowVectors(){
+        this.P1P2 = this.math.calcVector(this.WINDOW.P2, this.WINDOW.P1);
+        this.P3P2 = this.math.calcVector(this.WINDOW.P3, this.WINDOW.P2);
     }
 
 }

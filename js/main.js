@@ -16,8 +16,11 @@ window.onload = function () {
         BOTTOM: -10,
         WIDTH: 20,
         HEIGHT: 20,
-        CENTER: new Point(0, 0, -30), // центр окошка, через которое видим мир
-        CAMERA: new Point(0, 0, -50) // точка, из которой смотрим на мир
+        P1 : new Point(-10,10,-30),//левый верхний угол
+        P2 : new Point(-10,-10,-30),//левый нижний угол
+        P3 : new Point(10,-10,-30),//правый нижний угол
+        CENTER: new Point(0, 0, -60), // центр окошка, через которое видим мир
+        CAMERA: new Point(0, 0, -20) // точка, из которой смотрим на мир
     };
     const ZOOM_OUT = 1.1;
     const ZOOM_IN = 0.9;
@@ -34,11 +37,11 @@ window.onload = function () {
         //sur.saturn(),
         //sur.cilindr(),
         //sur.bublik(),
-        sur.hyperbolicparaboloid(20),
-        //sur.sphera(40,6, {x : 0, y : 0, z: 0}, '#FFD700',  {rotateOz : new Point }),
-        //sur.sphera(20,2, {x : -10, y : 0, z: -15}, '#808080', {rotateOy : new Point(0,0,-35) }),
-        //sur.sphera(25,3, {x : -20, y : 0, z: -5}, '#DAA520', {rotateOy : new Point(0,0,0), rotateOx : new Point(0,0,0) }),
-        //sur.sphera(25,3, new Point(-20,0,-5), '#FF6347', {rotateOy : new Point(0,10,-35) })
+        //sur.hyperbolicparaboloid(20),
+        sur.sphera(40,6, {x : 0, y : 0, z: 0}, '#FFD700'),  //{rotateOz : new Point }),
+        sur.sphera(20,2, {x : -10, y : 0, z: -15}, '#808080'), //{rotateOz : new Point(0,0,-35) }),
+        sur.sphera(25,3, {x : -20, y : 0, z: -5}, '#DAA520'), //{rotateOy : new Point(0,0,0), rotateOx : new Point(0,0,0) }),
+        sur.sphera(25,3, new Point(-20,0,-5), '#FF6347'), //{rotateOy : new Point(0,10,-35) })
           ]; // сцена
      const LIGHT = new Light(-20, 2, -20, 200);
 
@@ -77,7 +80,7 @@ window.onload = function () {
     }
 
     function mousemove(event) {
-        if (canRotate) {
+       /* if (canRotate) {
             if (event.movementX) {
                 const alpha = canvas.sx(event.movementX) / WINDOW.CENTER.z;
                 graph3D.rotateOyMatrix(alpha);
@@ -103,7 +106,24 @@ window.onload = function () {
                     }
                 });
             }    
+        }*/
+        if (event.movementX) {
+        const alpha = canvas.sx(event.movementX) ;
+        graph3D.rotateOyMatrix(alpha); 
+        
+        
         }
+        if (event.movementY) {
+            const alpha = canvas.sy(event.movementY) ;
+        graph3D.rotateOxMatrix(alpha); 
+        
+        
+        }
+        graph3D.transform(WINDOW.CAMERA);
+        graph3D.transform(WINDOW.CENTER);
+        graph3D.transform(WINDOW.P1);
+        graph3D.transform(WINDOW.P2);
+        graph3D.transform(WINDOW.P3);
     };
 
     function printPoints(value) {
@@ -120,7 +140,18 @@ window.onload = function () {
 
 
     function move(direction) {
-        if (direction == 'up' || direction == 'down') {
+        switch(direction){
+            case 'up': graph3D.rotateOxMatrix(-Math.PI / 180); break;
+            case 'down': graph3D.rotateOxMatrix(Math.PI / 180); break;
+            case 'left': graph3D.rotateOyMatrix(-Math.PI / 180); break;
+            case 'right': graph3D.rotateOyMatrix(Math.PI / 180); break;
+        }
+        graph3D.transform(WINDOW.CAMERA);
+        graph3D.transform(WINDOW.CENTER);
+        graph3D.transform(WINDOW.P1);
+        graph3D.transform(WINDOW.P2);
+        graph3D.transform(WINDOW.P3);
+        /*if (direction == 'up' || direction == 'down') {
             const delta = (direction === 'up') ? 0.1 : -0.1;
             graph3D.moveMatrix(0, delta, 0);
             SCENE.forEach(subject => subject.points.forEach(point => graph3D.transform(point)));
@@ -129,7 +160,7 @@ window.onload = function () {
             const delta = (direction === 'right') ? 0.1 : -0.1;
             graph3D.moveMatrix(delta, 0, 0);
             SCENE.forEach(subject => subject.points.forEach(point => graph3D.transform(point)));
-        }
+        }*/
     }
 
 
@@ -141,7 +172,7 @@ window.onload = function () {
 
             SCENE.forEach(subject => {
                 // Отсечь невидимые грани
-                //graph3D.calcGorner(subject, WINDOW.CAMERA);
+                //graph3D.calcCorner(subject, WINDOW.CAMERA);
 
                 // алгоритм художника
                 graph3D.calcDistance(subject, WINDOW.CAMERA, 'distance');
@@ -151,10 +182,15 @@ window.onload = function () {
                 for (let i = 0; i < subject.polygons.length; i++) {
                     if (subject.polygons[i].visible) {
                         const polygon = subject.polygons[i];
-                        const point1 = {x: graph3D.xs(subject.points[polygon.points[0]]), y: graph3D.ys(subject.points[polygon.points[0]])};
+
+                        const point1 = graph3D.getProection(subject.points[polygon.points[0]]);
+                        const point2 = graph3D.getProection(subject.points[polygon.points[1]]);
+                        const point3 = graph3D.getProection(subject.points[polygon.points[2]]);
+                        const point4 = graph3D.getProection(subject.points[polygon.points[3]]);
+                        /*const point1 = {x: graph3D.xs(subject.points[polygon.points[0]]), y: graph3D.ys(subject.points[polygon.points[0]])};
                         const point2 = {x: graph3D.xs(subject.points[polygon.points[1]]), y: graph3D.ys(subject.points[polygon.points[1]])};
                         const point3 = {x: graph3D.xs(subject.points[polygon.points[2]]), y: graph3D.ys(subject.points[polygon.points[2]])};
-                        const point4 = {x: graph3D.xs(subject.points[polygon.points[3]]), y: graph3D.ys(subject.points[polygon.points[3]])};
+                        const point4 = {x: graph3D.xs(subject.points[polygon.points[3]]), y: graph3D.ys(subject.points[polygon.points[3]])};*/
                         let {r, g, b} = polygon.color;
                         const lumen = graph3D.calcIllumination(polygon.lumen, LIGHT.lumen);
                         r = Math.round(r * lumen);
@@ -232,7 +268,7 @@ window.onload = function () {
         });
     }
 
-    setInterval(animation, 10);
+    setInterval(animation, 40);
 
     //clearInterval(interval);
 
@@ -250,7 +286,8 @@ window.onload = function () {
             FPS = 0;
 
         }
-
+         graph3D.calcPlaneEquation(); //Получить и записать плоскость экрана
+         graph3D.calcWindowVectors(); //Вычислить поворот экрана
         // рисуем сцену
         render();
         requestAnimFrame(animloop);

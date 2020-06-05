@@ -7,6 +7,20 @@ class Math3D {
                         [0, 0, 1, 0],
                         [0, 0, 0, 1]]                    
         };
+        //Уравнение плоскости в удобном виде
+        this.plane = {
+            A: 0,
+            B: 0,
+            C: 0,
+            //Точку плоскости(смещения)
+            x0: 0,
+            y0: 0,
+            z0: 0,
+            //Точку камеры
+            xs0: 0,
+            ys0: 0,
+            zs0: 0,
+        };
     }
 
 
@@ -29,15 +43,55 @@ class Math3D {
         }
     }
 
+    //Расчёт уравнения плоскости и запись его в структуру
+    //point1 - камера
+    // point 2 - центр(экрана)
+    calcPlaneEquation(point1,point2){
+        const vector = this.calcVector(point1,point2);
+        //Координаты плоскости
+        this.plane.A = vector.x;
+        this.plane.B = vector.y;
+        this.plane.C = vector.z;
+        this.plane.x0 = point2.x;
+        this.plane.y0 = point2.y;
+        this.plane.z0 = point2.z;
+        //Дописать камеру
+        this.plane.xs0 = point1.x;
+        this.plane.ys0 = point1.y;
+        this.plane.zs0 = point1.z;
+    }
+    //Получить проекцию точки на плоскость экрана относительно камеры
+    getProection(point){
+        const {A, B, C, x0, y0, z0, xs0, ys0, zs0} = this.plane;
+        const m = point.x - xs0;
+        const n = point.y - ys0;
+        const p = point.z - zs0;
+        const t = (A *(x0-xs0) + B*(y0-ys0) + C*(z0-zs0)) / (A*m + B*n + C*p);
+        const ps = {
+            x: x0 + m * t,
+            y: y0 + n * t,
+            z: z0 + p * t,
+        }
+        return {
+            x: ps.x, //- A,
+            y: ps.y, //- B,
+            z: ps.z, //- C,
+        }
+    }
+
     // Скалярное произведеине в координатной форме
     scalProd(a, b) {
         return a.x * b.x + a.y * b.y + a.z * b.z;
     }
 
     // Вычислить угол между 2-мя векторами
-    calcGorner(a, b) {
+    calcCorner(a, b) {
         return this.scalProd(a, b) / 
-            (Math.sqrt(this.scalProd(a, a)) + (Math.sqrt(this.scalProd(b, b))));
+            (Math.sqrt(this.scalProd(a, a)) * (Math.sqrt(this.scalProd(b, b))));
+    }
+
+    calcVectorModule(a){
+        return Math.sqrt(Math.pow(a.x,2) + Math.pow(a.y,2) + Math.pow(a.z,2));
     }
 
     // перемножение матрицы преобразования на точку
