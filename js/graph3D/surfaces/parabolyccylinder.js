@@ -1,4 +1,4 @@
-Surfaces.prototype.paraboliccylinder = (count = 10, color = '#FFD700') => {
+Surfaces.prototype.parabolyccylinder = (count = 10, color = '#FFD700') => {
 
     let points = [];
     

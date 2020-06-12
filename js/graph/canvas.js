@@ -38,19 +38,18 @@ class Canvas {
         return this.canvas.height - (y - this.WINDOW.BOTTOM) / this.WINDOW.HEIGHT * this.canvas.height;
     }
     xsPolygon(x) {
-        return (x - this.WINDOW.LEFT) / this.WINDOW.WIDTH * this.canvas.width;  
+        return x / this.WINDOW.WIDTH * this.canvas.width  ;
     }
     ysPolygon(y) {
-        return this.canvas.height - (y - this.WINDOW.BOTTOM) / this.WINDOW.HEIGHT * this.canvas.height; 
+        return this.canvas.height - y / this.WINDOW.HEIGHT * this.canvas.height ;
     }
     sx(x) {
-        //return x * this.WINDOW.WIDTH / this.canvas.width + this.WINDOW.LEFT;
         return x * this.WINDOW.WIDTH / this.canvas.width;
     }
     sy(y) {
-        //return (this.canvas.height - y) * this.WINDOW.HEIGHT / this.canvas.height + this.WINDOW.BOTTOM;
-        return  y * this.WINDOW.HEIGHT / this.canvas.height;
+        return - y * this.WINDOW.HEIGHT / this.canvas.height;
     }
+
 
     clear() {
         this.contextV.fillStyle = '#FFE4C4';
@@ -61,22 +60,22 @@ class Canvas {
         this.contextV.beginPath();
         this.contextV.strokeStyle = color;
         this.contextV.lineWidth = width;
-        this.contextV.moveTo(this.xs(x1), this.ys(y1));
-        this.contextV.lineTo(this.xs(x2), this.ys(y2));
+        this.contextV.moveTo(this.xsPolygon(x1), this.ysPolygon(y1));
+        this.contextV.lineTo(this.xsPolygon(x2), this.ysPolygon(y2));
         this.contextV.stroke();
     }
 
     point(x, y, color = '#f00', size = 2) {
         this.contextV.beginPath();
         this.contextV.strokeStyle = color;
-        this.contextV.arc(this.xs(x), this.ys(y), size, 0, this.PI2);
+        this.contextV.arc(this.xsPolygon(x), this.ysPolygon(y), size, 0, this.PI2);
         this.contextV.stroke();
     }
 
     text(x, y, text, font = '25px bold Arial', color = '#000') {
         this.contextV.fillStyle = color;
         this.contextV.font = font;
-        this.contextV.fillText(text, this.xs(x), this.ys(y));
+        this.contextV.fillText(text, this.xsPolygon(x), this.ysPolygon(y));
     }
 
     polygon(points, color = '#ff0000') {
